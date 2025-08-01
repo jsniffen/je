@@ -44,6 +44,7 @@ class Editor:
                 draw_rectangle(x, y, 3, font_size, WHITE)
 
 init_window(800, 450, "Je")
+set_window_state(FLAG_WINDOW_RESIZABLE)
 editor = Editor()
 
 while not window_should_close():
