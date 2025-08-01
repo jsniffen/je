@@ -28,6 +28,12 @@ class GapBuffer:
         self.start -= 1
         self.size += 1
 
+    def read(self):
+        return (
+            self.buffer[:self.start] +
+            self.buffer[self.start + self.size:]
+        )
+
     def __str__(self):
         return "".join(
             self.buffer[:self.start] +
