@@ -1,7 +1,7 @@
 from pyray import *
 from gap_buffer import GapBuffer
 
-gap_buffer = GapBuffer(100)
+gap_buffer = GapBuffer(10)
 
 init_window(800, 450, "Je")
 
