@@ -1,5 +1,5 @@
 class GapBuffer:
-    def __init__(self, size):
+    def __init__(self, size=10):
         self.start = 0
         self.size = size
         self.buffer = [None]*size
