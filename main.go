@@ -8,18 +8,43 @@ import (
 
 const FONT_SIZE = 20
 
-func drawGapBuffer(gb *GapBuffer, font rl.Font) {
-	var x float32 = 10
-	var y float32 = 10
+func drawStatusBar(e *Editor, font rl.Font, x, y int) {
+	sw := rl.GetScreenWidth()
+	sh := rl.GetScreenHeight()
 
-	if gb.start == 0 {
+	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Blue)
+	pos := rl.Vector2{float32(x + 10), float32(y + 10)}
+	if e.Mode == ModeNormal {
+		rl.DrawTextCodepoints(font, []rune("NORMAL"), pos, FONT_SIZE, 0, rl.White)
+	} else if e.Mode == ModeInsert {
+		rl.DrawTextCodepoints(font, []rune("INSERT"), pos, FONT_SIZE, 0, rl.White)
+	}
+}
+
+func drawWindow(w *Window, font rl.Font, x, y int) {
+	sw := rl.GetScreenWidth()
+	sh := rl.GetScreenHeight()
+
+	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Violet)
+	drawGapBuffer(w.Tag, font, x, y, !w.BodyFocused)
+
+	y += 2 * FONT_SIZE
+	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Gray)
+	drawGapBuffer(w.Body, font, x, y, w.BodyFocused)
+}
+
+func drawGapBuffer(gb *GapBuffer, font rl.Font, x0, y0 int, focused bool) {
+	var x float32 = float32(x0 + 10)
+	var y float32 = float32(y0 + 10)
+
+	if gb.start == 0 && focused {
 		rl.DrawRectangle(int32(x), int32(y), 3, FONT_SIZE, rl.White)
 	}
 
 	for i, r := range gb.Read() {
 		if r == '\n' {
 			y += FONT_SIZE
-			x = 10
+			x = float32(x0 + 10)
 		} else {
 			cp := int32(r)
 			info := rl.GetGlyphInfo(font, cp)
@@ -27,7 +52,7 @@ func drawGapBuffer(gb *GapBuffer, font rl.Font) {
 			x += float32(info.AdvanceX)
 		}
 
-		if i == gb.start-1 {
+		if i == gb.start-1 && focused {
 			rl.DrawRectangle(int32(x), int32(y), 3, FONT_SIZE, rl.White)
 		}
 	}
@@ -38,6 +63,7 @@ func main() {
 	defer rl.CloseWindow()
 
 	rl.SetWindowState(rl.FlagVsyncHint)
+	rl.SetExitKey(0)
 
 	font := rl.LoadFontEx("fonts/Tamzen10x20r.ttf", FONT_SIZE, nil, 0)
 	if !rl.IsFontValid(font) {
@@ -70,6 +96,9 @@ func main() {
 			case rl.KeyRight:
 				event.Type = EventKey
 				event.Key = KeyRight
+			case rl.KeyEscape:
+				event.Type = EventKey
+				event.Key = KeyEscape
 			}
 			editor.HandleEvent(event)
 		}
@@ -77,7 +106,10 @@ func main() {
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.Black)
 
-		drawGapBuffer(editor.gb, font)
+		screenHeight := rl.GetScreenHeight()
+
+		drawWindow(editor.Window, font, 0, 0)
+		drawStatusBar(editor, font, 0, screenHeight-2*FONT_SIZE)
 
 		rl.EndDrawing()
 	}

@@ -16,6 +16,7 @@ const (
 	KeyRight
 	KeyUp
 	KeyDown
+	KeyEscape
 )
 
 type Event struct {

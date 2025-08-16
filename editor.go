@@ -1,29 +1,50 @@
 package main
 
+type Mode int
+
+const (
+	ModeNormal Mode = iota
+	ModeInsert      = iota
+)
+
 type Editor struct {
-	gb *GapBuffer
+	Window *Window
+	Mode   Mode
 }
 
 func NewEditor() *Editor {
 	return &Editor{
-		gb: NewGapBuffer(),
+		Window: NewWindow(),
+		Mode:   ModeInsert,
 	}
 }
 
 func (e *Editor) HandleEvent(ev Event) {
-	switch ev.Type {
-	case EventRawKey:
-		e.gb.Insert(ev.Rune)
-	case EventKey:
-		switch ev.Key {
-		case KeyBackspace:
-			e.gb.Delete()
-		case KeyEnter:
-			e.gb.Insert('\n')
-		case KeyLeft:
-			e.gb.Left()
-		case KeyRight:
-			e.gb.Right()
+	if e.Mode == ModeNormal {
+		switch ev.Type {
+		case EventRawKey:
+			if ev.Rune == 'i' {
+				e.Mode = ModeInsert
+				return
+			}
+			if ev.Rune == 'o' {
+				e.Mode = ModeInsert
+				e.Window.SwapFocus()
+				return
+			}
+		}
+	}
+
+	if e.Mode == ModeInsert {
+		switch ev.Type {
+		case EventKey:
+			if ev.Key == KeyEscape {
+				e.Mode = ModeNormal
+				return
+			}
+			e.Window.HandleEvent(ev)
+		case EventRawKey:
+			e.Window.HandleEvent(ev)
 		}
 	}
 }
