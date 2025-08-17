@@ -72,3 +72,33 @@ func (gb *GapBuffer) Right() {
 		gb.start += 1
 	}
 }
+
+// Read the space delimited runes under the cursor
+func (gb *GapBuffer) ReadCursor() []rune {
+	runes := gb.Read()
+	pivot := gb.start - 1
+
+	var start, end int
+
+	for start = pivot; start > 0; start -= 1 {
+		if runes[start] == '\n' ||
+			runes[start] == ' ' ||
+			runes[start] == '\t' {
+			break
+		}
+	}
+
+	if start > 0 {
+		start += 1
+	}
+
+	for end = pivot; end < len(runes); end += 1 {
+		if runes[end] == '\n' ||
+			runes[end] == ' ' ||
+			runes[end] == '\t' {
+			break
+		}
+	}
+
+	return runes[start:end]
+}

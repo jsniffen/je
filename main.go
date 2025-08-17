@@ -7,62 +7,72 @@ import (
 )
 
 const FONT_SIZE = 20
+const PADDING = FONT_SIZE / 2
+
+func drawCursor(mode Mode, x, y int) {
+	if mode == ModeNormal {
+		rl.DrawRectangle(int32(x), int32(y), 10, FONT_SIZE, rl.Orange)
+	} else {
+		rl.DrawRectangle(int32(x), int32(y), 3, FONT_SIZE, rl.White)
+	}
+}
 
 func drawStatusBar(e *Editor, font rl.Font, x, y int) {
 	sw := rl.GetScreenWidth()
 	sh := rl.GetScreenHeight()
 
 	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Blue)
-	pos := rl.Vector2{float32(x + 10), float32(y + 10)}
+	pos := rl.Vector2{float32(x + PADDING), float32(y + PADDING)}
 	if e.Mode == ModeNormal {
-		rl.DrawTextCodepoints(font, []rune("NORMAL"), pos, FONT_SIZE, 0, rl.White)
+		rl.DrawTextCodepoints(font, []rune("NORMAL"), pos, FONT_SIZE, 0, rl.Orange)
 	} else if e.Mode == ModeInsert {
 		rl.DrawTextCodepoints(font, []rune("INSERT"), pos, FONT_SIZE, 0, rl.White)
 	}
 }
 
-func drawWindow(w *Window, font rl.Font, x, y int) {
+func drawWindow(w *Window, font rl.Font, x, y int, mode Mode) {
 	sw := rl.GetScreenWidth()
 	sh := rl.GetScreenHeight()
 
 	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Violet)
-	drawGapBuffer(w.Tag, font, x, y, !w.BodyFocused)
-
-	y += 2 * FONT_SIZE
+	y += drawGapBuffer(w.Tag, font, x, y, !w.BodyFocused, mode)
+	y += FONT_SIZE + PADDING
 	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Gray)
-	drawGapBuffer(w.Body, font, x, y, w.BodyFocused)
+	drawGapBuffer(w.Body, font, x, y, w.BodyFocused, mode)
 }
 
-func drawGapBuffer(gb *GapBuffer, font rl.Font, x0, y0 int, focused bool) {
-	var x float32 = float32(x0 + 10)
-	var y float32 = float32(y0 + 10)
+func drawGapBuffer(gb *GapBuffer, font rl.Font, x0, y0 int, focused bool, mode Mode) int {
+	x := x0 + PADDING
+	y := y0 + PADDING
 
 	if gb.start == 0 && focused {
-		rl.DrawRectangle(int32(x), int32(y), 3, FONT_SIZE, rl.White)
+		drawCursor(mode, x, y)
 	}
 
 	for i, r := range gb.Read() {
 		if r == '\n' {
 			y += FONT_SIZE
-			x = float32(x0 + 10)
+			x = x0 + PADDING
 		} else {
 			cp := int32(r)
 			info := rl.GetGlyphInfo(font, cp)
-			rl.DrawTextCodepoint(font, cp, rl.Vector2{x, y}, FONT_SIZE, rl.White)
-			x += float32(info.AdvanceX)
+			rl.DrawTextCodepoint(font, cp, rl.Vector2{float32(x), float32(y)}, FONT_SIZE, rl.White)
+			x += int(info.AdvanceX)
 		}
 
 		if i == gb.start-1 && focused {
-			rl.DrawRectangle(int32(x), int32(y), 3, FONT_SIZE, rl.White)
+			drawCursor(mode, x, y)
 		}
 	}
+
+	return y - y0
 }
 
 func main() {
 	rl.InitWindow(800, 450, "je")
 	defer rl.CloseWindow()
 
-	rl.SetWindowState(rl.FlagVsyncHint)
+	rl.SetWindowState(rl.FlagVsyncHint | rl.FlagWindowResizable)
 	rl.SetExitKey(0)
 
 	font := rl.LoadFontEx("fonts/Tamzen10x20r.ttf", FONT_SIZE, nil, 0)
@@ -107,9 +117,12 @@ func main() {
 		rl.ClearBackground(rl.Black)
 
 		screenHeight := rl.GetScreenHeight()
-
-		drawWindow(editor.Window, font, 0, 0)
-		drawStatusBar(editor, font, 0, screenHeight-2*FONT_SIZE)
+		for _, col := range editor.cols {
+			for _, win := range col.windows {
+				drawWindow(win, font, 0, 0, editor.Mode)
+			}
+		}
+		drawStatusBar(editor, font, 0, screenHeight-(2*PADDING+FONT_SIZE))
 
 		rl.EndDrawing()
 	}
