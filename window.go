@@ -18,10 +18,14 @@ func NewWindow(tagContent, bodyContent string) *Window {
 		body.Insert(c)
 	}
 
+	for _ = range bodyContent {
+		body.Left()
+	}
+
 	return &Window{
 		Tag:         tag,
 		Body:        body,
-		BodyFocused: true,
+		BodyFocused: false,
 		y0:          0,
 		Weight:      1.0,
 	}

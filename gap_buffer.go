@@ -59,6 +59,14 @@ func (gb *GapBuffer) Read() []rune {
 	return slices.Concat(gb.buf[:gb.start], gb.buf[gb.start+gb.size:])
 }
 
+func (gb *GapBuffer) Up() {
+	//todo
+}
+
+func (gb *GapBuffer) Down() {
+	//todo
+}
+
 func (gb *GapBuffer) Left() {
 	if gb.start > 0 {
 		gb.buf[gb.start+gb.size-1] = gb.buf[gb.start-1]
