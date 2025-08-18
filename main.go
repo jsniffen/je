@@ -79,7 +79,7 @@ func main() {
 	rl.SetWindowState(rl.FlagVsyncHint | rl.FlagWindowResizable)
 	rl.SetExitKey(0)
 
-	font := rl.LoadFontEx("c:/windows/fonts/consola.ttf", FONT_SIZE, nil, 0)
+	font := rl.LoadFontEx("c:/windows/fonts/Go-Mono.ttf", FONT_SIZE, nil, 0)
 	if !rl.IsFontValid(font) {
 		fmt.Println("Font failed to load")
 		return
