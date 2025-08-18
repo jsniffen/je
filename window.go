@@ -5,6 +5,7 @@ type Window struct {
 	Body        *GapBuffer
 	BodyFocused bool
 	y0          int
+	Weight      float32
 }
 
 func NewWindow(tagContent, bodyContent string) *Window {
@@ -22,6 +23,7 @@ func NewWindow(tagContent, bodyContent string) *Window {
 		Body:        body,
 		BodyFocused: true,
 		y0:          0,
+		Weight:      1.0,
 	}
 }
 

@@ -14,19 +14,21 @@ const (
 
 type Column struct {
 	x0      int
-	windows []*Window
+	Windows []*Window
 }
 
 type Editor struct {
-	cols []*Column
-	Mode Mode
+	Columns     []*Column
+	ColumnFocus int
+	WindowFocus int
+	Mode        Mode
 }
 
 func NewEditor() *Editor {
 	return &Editor{
-		cols: []*Column{{
+		Columns: []*Column{{
 			x0:      0,
-			windows: []*Window{NewWindow("scratch", "")},
+			Windows: []*Window{NewWindow("scratch", "")},
 		}},
 		Mode: ModeInsert,
 	}
@@ -34,6 +36,18 @@ func NewEditor() *Editor {
 
 func (e *Editor) Execute(s string) {
 	e.OpenFile(s)
+}
+
+func (e *Editor) up() {
+	if e.WindowFocus > 0 {
+		e.WindowFocus -= 1
+	}
+}
+
+func (e *Editor) down() {
+	if e.WindowFocus < len(e.Columns[e.ColumnFocus].Windows)-1 {
+		e.WindowFocus += 1
+	}
 }
 
 func (e *Editor) HandleEvent(ev Event) {
@@ -54,6 +68,12 @@ func (e *Editor) HandleEvent(ev Event) {
 				e.Mode = ModeInsert
 				e.getActiveWindow().SwapFocus()
 				return
+			}
+			if ev.Rune == 'k' {
+				e.up()
+			}
+			if ev.Rune == 'j' {
+				e.down()
 			}
 		}
 	}
@@ -84,9 +104,9 @@ func (e *Editor) OpenFile(s string) {
 }
 
 func (e *Editor) addWindow(w *Window) {
-	e.cols[0].windows = append(e.cols[0].windows, w)
+	e.Columns[0].Windows = append(e.Columns[0].Windows, w)
 }
 
 func (e *Editor) getActiveWindow() *Window {
-	return e.cols[0].windows[0]
+	return e.Columns[e.ColumnFocus].Windows[e.WindowFocus]
 }

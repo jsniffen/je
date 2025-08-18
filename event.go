@@ -20,8 +20,9 @@ const (
 )
 
 type Event struct {
-	Repeat bool
-	Rune   rune
-	Key    Key
-	Type   EventType
+	Repeat      bool
+	Rune        rune
+	Key         Key
+	Type        EventType
+	CtrlPressed bool
 }

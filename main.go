@@ -6,8 +6,9 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-const FONT_SIZE = 20
+const FONT_SIZE = 24
 const PADDING = FONT_SIZE / 2
+const BAR_HEIGHT = 2*PADDING + FONT_SIZE
 
 func drawCursor(mode Mode, x, y int) {
 	if mode == ModeNormal {
@@ -30,15 +31,15 @@ func drawStatusBar(e *Editor, font rl.Font, x, y int) {
 	}
 }
 
-func drawWindow(w *Window, font rl.Font, x, y int, mode Mode) {
+func drawWindow(w *Window, font rl.Font, x, y int, focused bool, mode Mode) {
 	sw := rl.GetScreenWidth()
 	sh := rl.GetScreenHeight()
 
 	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Violet)
-	y += drawGapBuffer(w.Tag, font, x, y, !w.BodyFocused, mode)
+	y += drawGapBuffer(w.Tag, font, x, y, !w.BodyFocused && focused, mode)
 	y += FONT_SIZE + PADDING
 	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Gray)
-	drawGapBuffer(w.Body, font, x, y, w.BodyFocused, mode)
+	drawGapBuffer(w.Body, font, x, y, w.BodyFocused && focused, mode)
 }
 
 func drawGapBuffer(gb *GapBuffer, font rl.Font, x0, y0 int, focused bool, mode Mode) int {
@@ -53,6 +54,9 @@ func drawGapBuffer(gb *GapBuffer, font rl.Font, x0, y0 int, focused bool, mode M
 		if r == '\n' {
 			y += FONT_SIZE
 			x = x0 + PADDING
+		} else if r == '\t' {
+			info := rl.GetGlyphInfo(font, ' ')
+			x += int(4 * info.AdvanceX)
 		} else {
 			cp := int32(r)
 			info := rl.GetGlyphInfo(font, cp)
@@ -75,7 +79,7 @@ func main() {
 	rl.SetWindowState(rl.FlagVsyncHint | rl.FlagWindowResizable)
 	rl.SetExitKey(0)
 
-	font := rl.LoadFontEx("fonts/Tamzen10x20r.ttf", FONT_SIZE, nil, 0)
+	font := rl.LoadFontEx("c:/windows/fonts/consola.ttf", FONT_SIZE, nil, 0)
 	if !rl.IsFontValid(font) {
 		fmt.Println("Font failed to load")
 		return
@@ -116,10 +120,19 @@ func main() {
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.Black)
 
+		x, y := 0, 0
+
 		screenHeight := rl.GetScreenHeight()
-		for _, col := range editor.cols {
-			for _, win := range col.windows {
-				drawWindow(win, font, 0, 0, editor.Mode)
+		colHeight := screenHeight - 2*BAR_HEIGHT
+
+		for i, col := range editor.Columns {
+			numWindows := len(col.Windows)
+			winHeight := colHeight / numWindows
+
+			for j, win := range col.Windows {
+				focused := editor.ColumnFocus == i && editor.WindowFocus == j
+				drawWindow(win, font, x, y, focused, editor.Mode)
+				y += winHeight
 			}
 		}
 		drawStatusBar(editor, font, 0, screenHeight-(2*PADDING+FONT_SIZE))
