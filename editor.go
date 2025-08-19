@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os/exec"
 	"slices"
 )
 
@@ -36,7 +37,19 @@ func NewEditor() *Editor {
 }
 
 func (e *Editor) Execute(s string) {
-	e.OpenFile(s)
+	switch s {
+	case "dir":
+		cmd := exec.Command("cmd", "/C", s)
+		output, err := cmd.Output()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		w := NewWindow(s, string(output))
+		e.AddWindow(w)
+	default:
+		e.OpenFile(s)
+	}
 }
 
 func (e *Editor) Up() {

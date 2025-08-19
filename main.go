@@ -51,6 +51,9 @@ func drawGapBuffer(gb *GapBuffer, font rl.Font, x0, y0 int, focused bool, mode M
 	}
 
 	for i, r := range gb.Read() {
+		if r == '\r' {
+			continue
+		}
 		if r == '\n' {
 			y += FONT_SIZE
 			x = x0 + PADDING
