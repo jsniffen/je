@@ -60,11 +60,64 @@ func (gb *GapBuffer) Read() []rune {
 }
 
 func (gb *GapBuffer) Up() {
-	//todo
+	firstLine := true
+	for i := 0; i < gb.start; i += 1 {
+		if gb.buf[i] == '\n' {
+			firstLine = false
+			break
+		}
+	}
+
+	if firstLine {
+		return
+	}
+
+	moves := 0
+	for gb.buf[gb.start-1] != '\n' {
+		gb.Left()
+		moves += 1
+	}
+	gb.Left()
+	moves += 1
+
+	lineLength := 0
+	for i := gb.start - 1; i >= 0 && gb.buf[i] != '\n'; i -= 1 {
+		lineLength += 1
+	}
+
+	for i := lineLength - moves; i >= 0; i -= 1 {
+		gb.Left()
+	}
 }
 
 func (gb *GapBuffer) Down() {
-	//todo
+	lastLine := true
+	for i := gb.start + gb.size; i < len(gb.buf); i += 1 {
+		if gb.buf[i] == '\n' {
+			lastLine = false
+			break
+		}
+	}
+
+	if lastLine {
+		return
+	}
+
+	toLeftNewline := 0
+	for i := gb.start - 1; i >= 0 && gb.buf[i] != '\n'; i -= 1 {
+		toLeftNewline += 1
+
+	}
+
+	for gb.buf[gb.start+gb.size] != '\n' {
+		gb.Right()
+	}
+	gb.Right()
+
+	for i := gb.start + gb.size; i < len(gb.buf) && gb.buf[i] != '\n' && toLeftNewline > 0; i += 1 {
+		gb.Right()
+		toLeftNewline -= 1
+	}
 }
 
 func (gb *GapBuffer) Left() {

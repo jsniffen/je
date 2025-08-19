@@ -38,20 +38,23 @@ func (e *Editor) Execute(s string) {
 	e.OpenFile(s)
 }
 
-func (e *Editor) up() {
+func (e *Editor) Up() {
 	if e.WindowFocus > 0 {
 		e.WindowFocus -= 1
 	}
 }
 
-func (e *Editor) down() {
+func (e *Editor) Down() {
 	if e.WindowFocus < len(e.Columns[e.ColumnFocus].Windows)-1 {
 		e.WindowFocus += 1
 	}
 }
 
 func (e *Editor) HandleEvent(ev Event) {
-	if e.Mode == ModeNormal {
+	gb := e.getActiveWindow().getActiveGapBuffer()
+
+	switch e.Mode {
+	case ModeNormal:
 		switch ev.Type {
 		case EventKey:
 			if ev.Key == KeyEnter {
@@ -60,34 +63,55 @@ func (e *Editor) HandleEvent(ev Event) {
 			}
 
 		case EventRawKey:
-			if ev.Rune == 'i' {
+			switch ev.Rune {
+			case 'I':
 				e.Mode = ModeInsert
-				return
-			}
-			if ev.Rune == 'o' {
+			case 'O':
 				e.Mode = ModeInsert
 				e.getActiveWindow().SwapFocus()
-				return
-			}
-			if ev.Rune == 'k' {
-				e.up()
-			}
-			if ev.Rune == 'j' {
-				e.down()
+			case 'H':
+				gb.Left()
+			case 'L':
+				gb.Right()
+			case 'K':
+				if ev.CtrlPressed {
+					e.Up()
+				} else {
+					gb.Up()
+				}
+			case 'J':
+				if ev.CtrlPressed {
+					e.Down()
+				} else {
+					gb.Down()
+				}
 			}
 		}
-	}
-
-	if e.Mode == ModeInsert {
+	case ModeInsert:
 		switch ev.Type {
 		case EventKey:
-			if ev.Key == KeyEscape {
+			switch ev.Key {
+			case KeyEscape:
 				e.Mode = ModeNormal
-				return
+			case KeyBackspace:
+				gb.Delete()
+			case KeyEnter:
+				gb.Insert('\n')
+			case KeyUp:
+				gb.Up()
+			case KeyDown:
+				gb.Down()
+			case KeyLeft:
+				gb.Left()
+			case KeyRight:
+				gb.Right()
 			}
-			e.getActiveWindow().HandleEvent(ev)
 		case EventRawKey:
-			e.getActiveWindow().HandleEvent(ev)
+			r := ev.Rune
+			if r >= 65 && r <= 90 && !ev.ShiftPressed {
+				r += 32
+			}
+			gb.Insert(r)
 		}
 	}
 }

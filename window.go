@@ -47,23 +47,3 @@ func (w *Window) ReadCursor() string {
 func (w *Window) SwapFocus() {
 	w.BodyFocused = !w.BodyFocused
 }
-
-func (w *Window) HandleEvent(ev Event) {
-	gb := w.getActiveGapBuffer()
-
-	switch ev.Type {
-	case EventRawKey:
-		gb.Insert(ev.Rune)
-	case EventKey:
-		switch ev.Key {
-		case KeyBackspace:
-			gb.Delete()
-		case KeyEnter:
-			gb.Insert('\n')
-		case KeyLeft:
-			gb.Left()
-		case KeyRight:
-			gb.Right()
-		}
-	}
-}

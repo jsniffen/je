@@ -87,33 +87,36 @@ func main() {
 
 	editor := NewEditor()
 	for !rl.WindowShouldClose() {
-		for c := rl.GetCharPressed(); c != 0; c = rl.GetCharPressed() {
-			event := Event{
-				Type: EventRawKey,
-				Rune: rune(c),
-			}
-			editor.HandleEvent(event)
-		}
-
 		for k := rl.GetKeyPressed(); k != 0; k = rl.GetKeyPressed() {
-			var event Event
+			event := Event{
+				CtrlPressed:  rl.IsKeyDown(rl.KeyLeftControl) || rl.IsKeyDown(rl.KeyRightControl),
+				ShiftPressed: rl.IsKeyDown(rl.KeyLeftShift) || rl.IsKeyDown(rl.KeyRightShift),
+			}
+
+			if k >= 32 && k <= 127 {
+				event.Type = EventRawKey
+				event.Rune = k
+			} else {
+				event.Type = EventKey
+			}
+
 			switch k {
 			case rl.KeyBackspace:
-				event.Type = EventKey
 				event.Key = KeyBackspace
 			case rl.KeyEnter:
-				event.Type = EventKey
 				event.Key = KeyEnter
+			case rl.KeyUp:
+				event.Key = KeyUp
+			case rl.KeyDown:
+				event.Key = KeyDown
 			case rl.KeyLeft:
-				event.Type = EventKey
 				event.Key = KeyLeft
 			case rl.KeyRight:
-				event.Type = EventKey
 				event.Key = KeyRight
 			case rl.KeyEscape:
-				event.Type = EventKey
 				event.Key = KeyEscape
 			}
+
 			editor.HandleEvent(event)
 		}
 

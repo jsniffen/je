@@ -10,7 +10,8 @@ const (
 )
 
 const (
-	KeyBackspace Key = iota
+	KeyNone Key = iota
+	KeyBackspace
 	KeyEnter
 	KeyLeft
 	KeyRight
@@ -20,9 +21,10 @@ const (
 )
 
 type Event struct {
-	Repeat      bool
-	Rune        rune
-	Key         Key
-	Type        EventType
-	CtrlPressed bool
+	Repeat       bool
+	Rune         rune
+	Key          Key
+	Type         EventType
+	CtrlPressed  bool
+	ShiftPressed bool
 }
