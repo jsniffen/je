@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"slices"
 )
 
 type Mode int
@@ -51,24 +52,26 @@ func (e *Editor) Down() {
 }
 
 func (e *Editor) HandleEvent(ev Event) {
-	gb := e.getActiveWindow().getActiveGapBuffer()
+	gb := e.GetActiveWindow().getActiveGapBuffer()
 
 	switch e.Mode {
 	case ModeNormal:
 		switch ev.Type {
 		case EventKey:
 			if ev.Key == KeyEnter {
-				s := e.getActiveWindow().ReadCursor()
+				s := e.GetActiveWindow().ReadCursor()
 				e.Execute(s)
 			}
 
 		case EventRawKey:
 			switch ev.Rune {
+			case 'Q':
+				e.DeleteActiveWindow()
 			case 'I':
 				e.Mode = ModeInsert
 			case 'O':
 				e.Mode = ModeInsert
-				e.getActiveWindow().SwapFocus()
+				e.GetActiveWindow().SwapFocus()
 			case 'H':
 				gb.Left()
 			case 'L':
@@ -124,13 +127,28 @@ func (e *Editor) OpenFile(s string) {
 	}
 
 	w := NewWindow(s, string(b))
-	e.addWindow(w)
+	e.AddWindow(w)
 }
 
-func (e *Editor) addWindow(w *Window) {
-	e.Columns[0].Windows = append(e.Columns[0].Windows, w)
+func (e *Editor) AddWindow(w *Window) {
+	e.Columns[e.ColumnFocus].Windows = append(e.Columns[0].Windows, w)
 }
 
-func (e *Editor) getActiveWindow() *Window {
+func (e *Editor) DeleteActiveWindow() {
+	if len(e.Columns[e.ColumnFocus].Windows) <= 1 {
+		return
+	}
+
+	e.Columns[e.ColumnFocus].Windows = slices.Concat(
+		e.Columns[e.ColumnFocus].Windows[:e.WindowFocus],
+		e.Columns[e.ColumnFocus].Windows[e.WindowFocus+1:],
+	)
+
+	if e.WindowFocus > 0 {
+		e.WindowFocus -= 1
+	}
+}
+
+func (e *Editor) GetActiveWindow() *Window {
 	return e.Columns[e.ColumnFocus].Windows[e.WindowFocus]
 }
