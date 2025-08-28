@@ -76,13 +76,15 @@ func drawGapBuffer(gb *GapBuffer, font rl.Font, x0, y0 int, focused bool, mode M
 }
 
 func main() {
+	rl.SetWindowState(rl.FlagWindowHighdpi)
+
 	rl.InitWindow(800, 450, "je")
 	defer rl.CloseWindow()
 
 	rl.SetWindowState(rl.FlagVsyncHint | rl.FlagWindowResizable)
 	rl.SetExitKey(0)
 
-	font := rl.LoadFontEx("c:/windows/fonts/Go-Mono.ttf", FONT_SIZE, nil, 0)
+	font := rl.LoadFontEx("fonts/Go-Mono.ttf", FONT_SIZE, nil, 0)
 	if !rl.IsFontValid(font) {
 		fmt.Println("Font failed to load")
 		return
@@ -118,6 +120,8 @@ func main() {
 				event.Key = KeyRight
 			case rl.KeyEscape:
 				event.Key = KeyEscape
+			case rl.KeyTab:
+				event.Key = KeyTab
 			}
 
 			editor.HandleEvent(event)

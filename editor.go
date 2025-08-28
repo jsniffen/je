@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"slices"
 )
@@ -38,6 +39,8 @@ func NewEditor() *Editor {
 
 func (e *Editor) Execute(s string) {
 	switch s {
+	case "put":
+		e.Put()
 	case "dir":
 		cmd := exec.Command("cmd", "/C", s)
 		output, err := cmd.Output()
@@ -109,6 +112,8 @@ func (e *Editor) HandleEvent(ev Event) {
 			switch ev.Key {
 			case KeyEscape:
 				e.Mode = ModeNormal
+			case KeyTab:
+				gb.Insert('\t')
 			case KeyBackspace:
 				gb.Delete()
 			case KeyEnter:
@@ -123,10 +128,7 @@ func (e *Editor) HandleEvent(ev Event) {
 				gb.Right()
 			}
 		case EventRawKey:
-			r := ev.Rune
-			if r >= 65 && r <= 90 && !ev.ShiftPressed {
-				r += 32
-			}
+			r := ev.TranslateRawKey()
 			gb.Insert(r)
 		}
 	}
@@ -164,4 +166,11 @@ func (e *Editor) DeleteActiveWindow() {
 
 func (e *Editor) GetActiveWindow() *Window {
 	return e.Columns[e.ColumnFocus].Windows[e.WindowFocus]
+}
+
+func (e *Editor) Put() error {
+	w := e.GetActiveWindow()
+	name := w.GetFileName()
+	data := []byte(string(e.GetActiveWindow().Body.Read()))
+	return os.WriteFile(name, data, 0666)
 }

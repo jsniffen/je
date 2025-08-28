@@ -1,5 +1,7 @@
 package main
 
+import "strings"
+
 type Window struct {
 	Tag         *GapBuffer
 	Body        *GapBuffer
@@ -46,4 +48,10 @@ func (w *Window) ReadCursor() string {
 
 func (w *Window) SwapFocus() {
 	w.BodyFocused = !w.BodyFocused
+}
+
+func (w *Window) GetFileName() string {
+	runes := w.Tag.Read()
+	i := strings.IndexRune(string(runes), ' ')
+	return string(runes[:i])
 }
