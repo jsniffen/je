@@ -33,7 +33,7 @@ func NewWindow(tagContent, bodyContent string) *Window {
 	}
 }
 
-func (w *Window) getActiveGapBuffer() *GapBuffer {
+func (w *Window) GetActiveGapBuffer() *GapBuffer {
 	if w.BodyFocused {
 		return w.Body
 	} else {
@@ -42,7 +42,7 @@ func (w *Window) getActiveGapBuffer() *GapBuffer {
 }
 
 func (w *Window) ReadCursor() string {
-	gb := w.getActiveGapBuffer()
+	gb := w.GetActiveGapBuffer()
 	return string(gb.ReadCursor())
 }
 

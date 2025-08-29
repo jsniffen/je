@@ -11,23 +11,17 @@ const PADDING = FONT_SIZE / 2
 const BAR_HEIGHT = 2*PADDING + FONT_SIZE
 
 func drawCursor(mode Mode, x, y int) {
-	if mode == ModeNormal {
+	switch mode {
+	case ModeNormal:
 		rl.DrawRectangle(int32(x), int32(y), 10, FONT_SIZE, rl.Orange)
-	} else {
+	case ModeInsert:
 		rl.DrawRectangle(int32(x), int32(y), 3, FONT_SIZE, rl.White)
-	}
-}
-
-func drawStatusBar(e *Editor, font rl.Font, x, y int) {
-	sw := rl.GetScreenWidth()
-	sh := rl.GetScreenHeight()
-
-	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Blue)
-	pos := rl.Vector2{float32(x + PADDING), float32(y + PADDING)}
-	if e.Mode == ModeNormal {
-		rl.DrawTextCodepoints(font, []rune("NORMAL"), pos, FONT_SIZE, 0, rl.Orange)
-	} else if e.Mode == ModeInsert {
-		rl.DrawTextCodepoints(font, []rune("INSERT"), pos, FONT_SIZE, 0, rl.White)
+	case ModeVisual:
+		rl.DrawRectangle(int32(x), int32(y), 10, FONT_SIZE, rl.Violet)
+	case ModeVisualLine:
+		rl.DrawRectangle(int32(x), int32(y), 10, FONT_SIZE, rl.Violet)
+	default:
+		rl.DrawRectangle(int32(x), int32(y), 3, FONT_SIZE, rl.White)
 	}
 }
 
@@ -35,10 +29,10 @@ func drawWindow(w *Window, font rl.Font, x, y int, focused bool, mode Mode) {
 	sw := rl.GetScreenWidth()
 	sh := rl.GetScreenHeight()
 
-	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Violet)
+	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Blue)
 	y += drawGapBuffer(w.Tag, font, x, y, !w.BodyFocused && focused, mode)
 	y += FONT_SIZE + PADDING
-	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Gray)
+	rl.DrawRectangle(int32(x), int32(y), int32(sw), int32(sh), rl.Black)
 	drawGapBuffer(w.Body, font, x, y, w.BodyFocused && focused, mode)
 }
 
@@ -54,17 +48,26 @@ func drawGapBuffer(gb *GapBuffer, font rl.Font, x0, y0 int, focused bool, mode M
 		if r == '\r' {
 			continue
 		}
+
 		if r == '\n' {
 			y += FONT_SIZE
 			x = x0 + PADDING
 		} else if r == '\t' {
 			info := rl.GetGlyphInfo(font, ' ')
-			x += int(4 * info.AdvanceX)
+			w := int(4 * info.AdvanceX)
+			if mode == ModeVisual && gb.InSelectionRange(i) && focused {
+				rl.DrawRectangle(int32(x), int32(y), int32(w), FONT_SIZE, rl.Violet)
+			}
+			x += w
 		} else {
 			cp := int32(r)
 			info := rl.GetGlyphInfo(font, cp)
+			w := int(info.AdvanceX)
+			if mode == ModeVisual && gb.InSelectionRange(i) && focused {
+				rl.DrawRectangle(int32(x), int32(y), int32(w), FONT_SIZE, rl.Violet)
+			}
 			rl.DrawTextCodepoint(font, cp, rl.Vector2{float32(x), float32(y)}, FONT_SIZE, rl.White)
-			x += int(info.AdvanceX)
+			x += w
 		}
 
 		if i == gb.start-1 && focused {
@@ -92,20 +95,26 @@ func main() {
 
 	editor := NewEditor()
 	for !rl.WindowShouldClose() {
-		for k := rl.GetKeyPressed(); k != 0; k = rl.GetKeyPressed() {
-			event := Event{
-				CtrlPressed:  rl.IsKeyDown(rl.KeyLeftControl) || rl.IsKeyDown(rl.KeyRightControl),
-				ShiftPressed: rl.IsKeyDown(rl.KeyLeftShift) || rl.IsKeyDown(rl.KeyRightShift),
+		ctrlPressed := rl.IsKeyDown(rl.KeyLeftControl) || rl.IsKeyDown(rl.KeyRightControl)
+		shiftPressed := rl.IsKeyDown(rl.KeyLeftShift) || rl.IsKeyDown(rl.KeyRightShift)
+		for key := rl.KeyNull; key <= rl.KeyKpEqual; key += 1 {
+			if !rl.IsKeyPressed(int32(key)) && !rl.IsKeyPressedRepeat(int32(key)) {
+				continue
 			}
 
-			if k >= 32 && k <= 127 {
+			event := Event{
+				CtrlPressed:  ctrlPressed,
+				ShiftPressed: shiftPressed,
+			}
+
+			if key >= 32 && key <= 127 {
 				event.Type = EventRawKey
-				event.Rune = k
+				event.Rune = rune(key)
 			} else {
 				event.Type = EventKey
 			}
 
-			switch k {
+			switch key {
 			case rl.KeyBackspace:
 				event.Key = KeyBackspace
 			case rl.KeyEnter:
@@ -145,7 +154,6 @@ func main() {
 				y += winHeight
 			}
 		}
-		drawStatusBar(editor, font, 0, screenHeight-(2*PADDING+FONT_SIZE))
 
 		rl.EndDrawing()
 	}

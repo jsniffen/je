@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -12,7 +11,9 @@ type Mode int
 
 const (
 	ModeNormal Mode = iota
-	ModeInsert      = iota
+	ModeInsert
+	ModeVisual
+	ModeVisualLine
 )
 
 type Column struct {
@@ -41,17 +42,15 @@ func (e *Editor) Execute(s string) {
 	switch s {
 	case "put":
 		e.Put()
-	case "dir":
-		cmd := exec.Command("cmd", "/C", s)
-		output, err := cmd.Output()
-		if err != nil {
-			fmt.Println(err)
+	default:
+		err := e.OpenFile(s)
+		if err == nil {
 			return
 		}
-		w := NewWindow(s, string(output))
+		cmd := exec.Command("bash", "-c", s)
+		output, err := cmd.CombinedOutput()
+		w := NewWindow(s+"+", string(output))
 		e.AddWindow(w)
-	default:
-		e.OpenFile(s)
 	}
 }
 
@@ -68,7 +67,7 @@ func (e *Editor) Down() {
 }
 
 func (e *Editor) HandleEvent(ev Event) {
-	gb := e.GetActiveWindow().getActiveGapBuffer()
+	gb := e.GetActiveWindow().GetActiveGapBuffer()
 
 	switch e.Mode {
 	case ModeNormal:
@@ -104,6 +103,13 @@ func (e *Editor) HandleEvent(ev Event) {
 				} else {
 					gb.Down()
 				}
+			case 'V':
+				if ev.ShiftPressed {
+					e.Mode = ModeVisualLine
+				} else {
+					e.Mode = ModeVisual
+					e.GetActiveWindow().GetActiveGapBuffer().SelectBegin()
+				}
 			}
 		}
 	case ModeInsert:
@@ -131,18 +137,49 @@ func (e *Editor) HandleEvent(ev Event) {
 			r := ev.TranslateRawKey()
 			gb.Insert(r)
 		}
+	case ModeVisual:
+		switch ev.Type {
+		case EventKey:
+			switch ev.Key {
+			case KeyEscape:
+				e.Mode = ModeNormal
+			case KeyEnter:
+				s := string(e.GetActiveWindow().GetActiveGapBuffer().ReadSelection())
+				e.Execute(s)
+				e.Mode = ModeNormal
+			}
+		case EventRawKey:
+			switch ev.Rune {
+			case 'H':
+				gb.Left()
+			case 'L':
+				gb.Right()
+			case 'K':
+				gb.Up()
+			case 'J':
+				gb.Down()
+			}
+		}
+	case ModeVisualLine:
+		switch ev.Type {
+		case EventKey:
+			switch ev.Key {
+			case KeyEscape:
+				e.Mode = ModeNormal
+			}
+		}
 	}
 }
 
-func (e *Editor) OpenFile(s string) {
+func (e *Editor) OpenFile(s string) error {
 	b, err := ioutil.ReadFile(s)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 
 	w := NewWindow(s, string(b))
 	e.AddWindow(w)
+	return nil
 }
 
 func (e *Editor) AddWindow(w *Window) {

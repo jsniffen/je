@@ -5,16 +5,18 @@ import (
 )
 
 type GapBuffer struct {
-	start int
-	size  int
-	buf   []rune
+	start     int
+	size      int
+	buf       []rune
+	Selection int
 }
 
 func NewGapBuffer() *GapBuffer {
 	return &GapBuffer{
-		start: 0,
-		size:  1000,
-		buf:   make([]rune, 1000, 1000),
+		start:     0,
+		size:      1000,
+		buf:       make([]rune, 1000, 1000),
+		Selection: 0,
 	}
 }
 
@@ -162,4 +164,37 @@ func (gb *GapBuffer) ReadCursor() []rune {
 	}
 
 	return runes[start:end]
+}
+
+func (gb *GapBuffer) SelectBegin() {
+	gb.Selection = gb.start
+}
+
+func (gb *GapBuffer) InSelectionRange(i int) bool {
+	if gb.Selection == gb.start {
+		return false
+	}
+
+	if gb.Selection < gb.start {
+		return gb.Selection <= i && i < gb.start
+	}
+
+	return gb.start <= i && i <= gb.Selection
+}
+
+func (gb *GapBuffer) ReadSelection() []rune {
+	lo, hi := gb.start, gb.Selection
+	if lo > hi {
+		lo, hi = hi, lo
+	}
+
+	runes := gb.Read()
+	if lo < 0 {
+		lo = 0
+	}
+	if hi > len(runes) {
+		hi = len(runes)
+	}
+
+	return runes[lo:hi]
 }
